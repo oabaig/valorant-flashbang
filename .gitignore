@@ -1,0 +1,6 @@
+.python-version
+.env
+.vscode
+.idea
+data/
+data_resized/

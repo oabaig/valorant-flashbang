@@ -22,6 +22,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extract frames from a video')
     parser.add_argument('--input', '-i', required=True, help='Path to the video file')
     parser.add_argument('--output', '-o', help='Folder to save the extracted frames')
+    parser.add_argument('--step', 's', help='Get every nth frame', default=1)
     args = parser.parse_args()
     
     input_path = Path(args.input).resolve()

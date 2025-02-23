@@ -48,7 +48,7 @@ def main():
             _, predicted = torch.max(output, 1)
 
             if predicted.item() == 0:
-                print("⚡ Flashbang Detected!")
+                print("Flashbang Detected!")
                 cv2.putText(frame, "Flashbang Detected!", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
             else:
                 cv2.putText(frame, "No Flashbang", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)

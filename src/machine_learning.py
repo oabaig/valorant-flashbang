@@ -10,6 +10,23 @@ import time
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+training_transform = transforms.Compose([
+    transforms.Grayscale(num_output_channels=1),
+    transforms.CenterCrop(256),
+    transforms.RandomRotation(15),
+    transforms.RandomHorizontalFlip(p=0.5),
+    transforms.ColorJitter(brightness=0.3, contrast=0.3),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5], std=[0.5])
+])
+
+test_transform = transforms.Compose([
+    transforms.Grayscale(num_output_channels=1),
+    transforms.CenterCrop(256),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5], std=[0.5])
+])  
+
 class FlashbangModel(nn.Module):
     def __init__(self):
         super(FlashbangModel, self).__init__()
@@ -93,23 +110,11 @@ def main():
     MODEL_PATH = pathlib.Path(args.model_path)
     EPOCHS = args.epochs
     BATCH_SIZE = args.batch_size
+    CPU_COUNT = os.cpu_count()
     
-    training_transform = transforms.Compose([
-        transforms.Grayscale(num_output_channels=1),
-        transforms.CenterCrop(256),
-        transforms.RandomRotation(15),
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.ColorJitter(brightness=0.3, contrast=0.3),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5], std=[0.5])
-    ])
-
-    test_transform = transforms.Compose([
-        transforms.Grayscale(num_output_channels=1),
-        transforms.CenterCrop(256),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5], std=[0.5])
-    ])  
+    print(f"Using {device} for training")
+    print(f"Training on {IMAGES_DIR} with {EPOCHS} epochs and batch size of {BATCH_SIZE}")
+    print(f"Using {CPU_COUNT} CPU cores for data loading")
 
     dataset = datasets.ImageFolder(root=IMAGES_DIR, transform=training_transform)
 
@@ -131,8 +136,8 @@ def main():
 
     sampler = torch.utils.data.WeightedRandomSampler(sample_weights, len(sample_weights), replacement=True)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=sampler)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE, num_workers=CPU_COUNT, sampler=sampler)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=BATCH_SIZE, num_workers=CPU_COUNT, shuffle=False)
 
     model = FlashbangModel().to(device)
 

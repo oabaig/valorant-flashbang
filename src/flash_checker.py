@@ -6,8 +6,7 @@ from PIL import Image
 from machine_learning import FlashbangModel, test_transform
 import mss  
 
-def capture_screen(region=None):
-    """Capture the screen using mss."""
+def capture_screen(region=None) -> np.ndarray:
     with mss.mss() as sct:
         monitor = sct.monitors[2]
 
@@ -24,9 +23,18 @@ def capture_screen(region=None):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
         return frame
 
+def display_image(frame: np.ndarray, flashbangDetected: bool) -> None:
+    if flashbangDetected:
+        cv2.putText(frame, "Flashbang Detected!", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+    else:
+        cv2.putText(frame, "No Flashbang", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+
+    cv2.imshow("Flashbang Detection", frame)
+
 def main():
     parser = argparse.ArgumentParser(description="Detect flashbangs in real-time")
     parser.add_argument("--model", type=str, required=True, help="Path to the model")
+    parser.add_argument("--display", action="store_true", help="Display the screen", default=False)
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -47,20 +55,14 @@ def main():
             output = model(image)
             _, predicted = torch.max(output, 1)
 
-            if predicted.item() == 0:
-                print("Flashbang Detected!")
-                cv2.putText(frame, "Flashbang Detected!", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-            else:
-                cv2.putText(frame, "No Flashbang", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+        if args.display:
+            display_image(frame, predicted.item() == 0) # 0 is flashbang class
+            
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
-        # Show frame with overlay
-        cv2.imshow("Flashbang Detection", frame)
-
-        # Press 'q' to exit
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cv2.destroyAllWindows()
+    if args.display:
+        cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     main()

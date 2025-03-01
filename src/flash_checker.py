@@ -1,3 +1,4 @@
+import time
 import torch
 import cv2
 import argparse
@@ -6,9 +7,10 @@ from PIL import Image
 from machine_learning import FlashbangModel, test_transform
 import mss  
 
-def capture_screen(region=None) -> np.ndarray:
+# https://stackoverflow.com/questions/35097837/capture-video-data-from-screen-in-python <- check this link out to maybe make this more performant
+def capture_screen(region=None, monitor_capture=1) -> np.ndarray:
     with mss.mss() as sct:
-        monitor = sct.monitors[2]
+        monitor = sct.monitors[monitor_capture]
 
         if region:
             monitor = {
@@ -35,6 +37,8 @@ def main():
     parser = argparse.ArgumentParser(description="Detect flashbangs in real-time")
     parser.add_argument("--model", type=str, required=True, help="Path to the model")
     parser.add_argument("--display", action="store_true", help="Display the screen", default=False)
+    parser.add_argument("--monitor", type=int, help="Monitor region to capture", default=1)
+    parser.add_argument("--fps", type=int, help="Frames per second", default=60)
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -46,7 +50,7 @@ def main():
     print("Real-time flashbang detection started. Press 'q' to quit.")
 
     while True:
-        frame = capture_screen()
+        frame = capture_screen(monitor_capture=args.monitor)
 
         image = Image.fromarray(frame)
         image = test_transform(image).unsqueeze(0).to(device)
@@ -58,8 +62,10 @@ def main():
         if args.display:
             display_image(frame, predicted.item() == 0) # 0 is flashbang class
             
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+            
+        time.sleep(1 / args.fps)
 
     if args.display:
         cv2.destroyAllWindows()

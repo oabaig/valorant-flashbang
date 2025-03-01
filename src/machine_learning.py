@@ -129,7 +129,6 @@ def main():
 
     class_counts = np.bincount(train_labels)
     class_weights = [1.0 / count for count in class_counts]
-    print(f"Class weights: {class_weights}")
 
     sample_weights = [class_weights[label] for label in train_labels]
     sample_weights = torch.DoubleTensor(sample_weights)

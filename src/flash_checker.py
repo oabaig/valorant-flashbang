@@ -7,25 +7,19 @@ from PIL import Image
 from machine_learning import FlashbangModel, test_transform
 import mss  
 
-# https://stackoverflow.com/questions/35097837/capture-video-data-from-screen-in-python <- check this link out to maybe make this more performant
-def capture_screen(region=None, monitor_capture=1) -> np.ndarray:
+def capture_screen(monitor_capture=1) -> Image.Image:
     with mss.mss() as sct:
         monitor = sct.monitors[monitor_capture]
 
-        if region:
-            monitor = {
-                "top": region[1],
-                "left": region[0],
-                "width": region[2],
-                "height": region[3]
-            }
-
         screenshot = sct.grab(monitor)
-        frame = np.array(screenshot)
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
-        return frame
+        img = Image.frombytes("RGB", (screenshot.width, screenshot.height), screenshot.rgb)
+        return img
 
-def display_image(frame: np.ndarray, flashbangDetected: bool) -> None:
+def display_image(image: Image.Image, flashbangDetected: bool) -> None:
+    frame = np.array(image)
+    
+    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
     if flashbangDetected:
         cv2.putText(frame, "Flashbang Detected!", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
     else:
@@ -50,17 +44,16 @@ def main():
     print("Real-time flashbang detection started. Press 'q' to quit.")
 
     while True:
-        frame = capture_screen(monitor_capture=args.monitor)
+        image = capture_screen(monitor_capture=args.monitor)
 
-        image = Image.fromarray(frame)
-        image = test_transform(image).unsqueeze(0).to(device)
+        transformed_image = test_transform(image).unsqueeze(0).to(device)
 
         with torch.no_grad():
-            output = model(image)
+            output = model(transformed_image)
             _, predicted = torch.max(output, 1)
 
         if args.display:
-            display_image(frame, predicted.item() == 0) # 0 is flashbang class
+            display_image(image, predicted.item() == 0) # 0 is flashbang class
             
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

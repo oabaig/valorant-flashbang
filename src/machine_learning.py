@@ -10,7 +10,7 @@ import time
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-training_transform = transforms.Compose([
+training_transform: transforms.Compose = transforms.Compose([
     transforms.Grayscale(num_output_channels=1),
     transforms.CenterCrop(256),
     transforms.RandomRotation(15),
@@ -20,7 +20,7 @@ training_transform = transforms.Compose([
     transforms.Normalize(mean=[0.5], std=[0.5])
 ])
 
-test_transform = transforms.Compose([
+test_transform: transforms.Compose = transforms.Compose([
     transforms.Grayscale(num_output_channels=1),
     transforms.CenterCrop(256),
     transforms.ToTensor(),

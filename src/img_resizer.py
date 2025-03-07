@@ -1,9 +1,11 @@
-from PIL import Image
 import os
+from sys import argv
+from typing import Tuple
+
 import cv2
 import numpy as np
-from typing import Tuple
-from sys import argv
+from PIL import Image
+
 
 # https://gist.github.com/IdeaKing/11cf5e146d23c5bb219ba3508cca89ec
 def resize_with_pad(image: np.array, 

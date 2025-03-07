@@ -1,11 +1,14 @@
-import time
-import torch
-import cv2
 import argparse
+import time
+
+import cv2
+import mss
 import numpy as np
+import torch
 from PIL import Image
+
 from machine_learning import FlashbangModel, test_transform
-import mss  
+
 
 def capture_screen(monitor_capture=1) -> Image.Image:
     with mss.mss() as sct:
@@ -26,7 +29,17 @@ def display_image(image: Image.Image, flashbangDetected: bool) -> None:
         cv2.putText(frame, "No Flashbang", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
 
     cv2.imshow("Flashbang Detection", frame)
+    
+def detect_flashbang(image: Image.Image, model: FlashbangModel, device: torch.device) -> bool:
+    transformed_image = test_transform(image).unsqueeze(0).to(device)
+    
+    with torch.no_grad():
+        output = model(transformed_image)
+        _, predicted = torch.max(output, 1)
+        
+    return predicted.item() == 0 # 0 is flashbang class
 
+    
 def main():
     parser = argparse.ArgumentParser(description="Detect flashbangs in real-time")
     parser.add_argument("--model", type=str, required=True, help="Path to the model")
@@ -38,25 +51,22 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     model = FlashbangModel().to(device)
-    model.load_state_dict(torch.load(args.model, map_location=device))
+    model.load_state_dict(torch.load(args.model, map_location=device, weights_only=True))
     model.eval()
 
-    print("Real-time flashbang detection started. Press 'q' to quit.")
+    if args.display:
+        print("Real-time flashbang detection started. Press 'q' to quit.")
 
     while True:
         image = capture_screen(monitor_capture=args.monitor)
 
-        transformed_image = test_transform(image).unsqueeze(0).to(device)
-
-        with torch.no_grad():
-            output = model(transformed_image)
-            _, predicted = torch.max(output, 1)
+        predicted = detect_flashbang(image, model, device)
 
         if args.display:
-            display_image(image, predicted.item() == 0) # 0 is flashbang class
-            
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            display_image(image, predicted)             
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
             
         time.sleep(1 / args.fps)
 

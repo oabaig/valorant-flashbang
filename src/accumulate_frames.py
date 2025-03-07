@@ -1,5 +1,6 @@
 import argparse
 import pathlib
+
 import cv2
 
 """ Gathers all the images of a folder and its subfolders and saves them in a new folder. 

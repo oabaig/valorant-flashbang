@@ -1,6 +1,7 @@
-from pathlib import Path
-import cv2
 import argparse
+from pathlib import Path
+
+import cv2
 
 """ Extracts frames from a video file and saves them as images.
     Args:

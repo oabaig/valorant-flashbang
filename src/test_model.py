@@ -1,8 +1,11 @@
-from machine_learning import FlashbangModel, test_transform
 import argparse
-import torch
 import pathlib
+
+import torch
 from PIL import Image
+
+from machine_learning import FlashbangModel, test_transform
+
 
 def main():
     parser = argparse.ArgumentParser(description="Train a model to detect flashbangs")

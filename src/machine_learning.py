@@ -1,12 +1,13 @@
 import argparse
+import os
+import pathlib
+import time
+
 import numpy as np
 import torch
 import torch.nn as nn
-from torchvision import transforms, datasets, models
-import os
-import pathlib
+from torchvision import datasets, models, transforms
 from tqdm.auto import tqdm
-import time
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

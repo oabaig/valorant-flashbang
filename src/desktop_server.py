@@ -5,7 +5,7 @@ import torch
 import time
 
 from flash_checker import capture_screen, detect_flashbang
-from machine_learning import FlashbangModel, test_transform
+from machine_learning import FlashbangModel
 
 
 def main():
@@ -67,7 +67,6 @@ def main():
                 clients.remove(client)
 
             time.sleep(0.05)
-
     except KeyboardInterrupt:
         print("\nServer interrupted. Shutting down...")
     finally:

@@ -97,7 +97,7 @@ def evaluate_model(model, test_loader, criterion, device):
             
         accuracy = correct / total * 100
     
-        print(f"Test Accuracy: {accuracy:.2f}")
+        print(f"Test Accuracy: {accuracy:.2f}, Loss: {loss:.4f}")
         
 def main():
     parser = argparse.ArgumentParser(description="Train a model to detect flashbangs")

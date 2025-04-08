@@ -12,6 +12,8 @@ def main():
     PIN = args.pin
     
     GPIO.setmode(GPIO.BCM)
+    GPIO.setup(PIN, GPIO.OUT)
+    GPIO.output(PIN, GPIO.LOW)
 
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

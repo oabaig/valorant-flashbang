@@ -59,12 +59,14 @@ def main():
             for client in clients:
                 try:
                     client.sendall(str(predicted).encode())
-                except (BrokenPipeError, ConnectionResetError):
-                    print(f"Client disconnected: {client}")
+                except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError) as e:
+                    print(f"Client disconnected or error during send: {e}")
                     disconnected_clients.append(client)
+                    client.close()
 
             for client in disconnected_clients:
-                clients.remove(client)
+                if client in clients:
+                    clients.remove(client)
 
             time.sleep(0.05)
     except KeyboardInterrupt:

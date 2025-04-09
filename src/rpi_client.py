@@ -30,7 +30,7 @@ def main():
                     flashbang_detected = data.decode()
                     print(f"Flashbang detected: {flashbang_detected}")
                     
-                    if flashbang_detected == "1":
+                    if flashbang_detected == "True":
                         GPIO.output(PIN, GPIO.HIGH)
                     else:
                         GPIO.output(PIN, GPIO.LOW)

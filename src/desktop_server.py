@@ -3,9 +3,12 @@ import socket
 import sys
 import torch
 import time
+from PIL import Image
 
-from flash_checker import capture_screen, detect_flashbang
+from flash_checker import detect_flashbang, capture_screen
 from machine_learning import FlashbangModel
+
+from multiprocessing import Queue, Process
 
 
 def main():
@@ -42,6 +45,9 @@ def main():
     print("Press Ctrl+C to stop.")
 
     try:
+        frame_queue = Queue(maxsize=9)
+        p = Process(target=capture_screen, args=(frame_queue,))
+        p.start()
         while True:
             try:
                 conn, addr = server_socket.accept()
@@ -51,13 +57,16 @@ def main():
             except BlockingIOError:
                 pass
 
-            image = capture_screen()
-            predicted = detect_flashbang(image, model, device)
-            print(f"Flashbang detected: {predicted}")
+            if not frame_queue.empty():
+                frame = frame_queue.get()
+                image = Image.fromarray(frame)
+                predicted = detect_flashbang(image, model, device)
+                print(f"Flashbang detected: {predicted}")
 
             disconnected_clients = []
             for client in clients:
                 try:
+                    client.sendall("hello".encode())
                     client.sendall(str(predicted).encode())
                 except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError) as e:
                     print(f"Client disconnected or error during send: {e}")
@@ -68,7 +77,7 @@ def main():
                 if client in clients:
                     clients.remove(client)
 
-            time.sleep(0.05)
+            time.sleep(0.15)
     except KeyboardInterrupt:
         print("\nServer interrupted. Shutting down...")
     finally:

@@ -2,22 +2,24 @@ import argparse
 import time
 
 import cv2
-import mss
+import dxcam
 import numpy as np
 import torch
 from PIL import Image
 
 from machine_learning import FlashbangModel, test_transform
+from multiprocessing import Queue
 
-
-def capture_screen(monitor_capture=1) -> Image.Image:
-    with mss.mss() as sct:
-        monitor = sct.monitors[monitor_capture]
-
-        screenshot = sct.grab(monitor)
-        img = Image.frombytes("RGB", (screenshot.width, screenshot.height), screenshot.rgb)
-        return img
-
+def capture_screen(queue: Queue, fps=20, monitor=0):
+    camera = dxcam.create(output_idx=monitor)
+    camera.start(target_fps=fps)
+    
+    while True:
+        frame = camera.get_latest_frame()
+        if frame is not None and not queue.full():
+            queue.put(frame)
+        time.sleep(1 / fps)
+    
 def display_image(image: Image.Image, flashbangDetected: bool) -> None:
     frame = np.array(image)
     
@@ -29,8 +31,8 @@ def display_image(image: Image.Image, flashbangDetected: bool) -> None:
         cv2.putText(frame, "No Flashbang", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
 
     cv2.imshow("Flashbang Detection", frame)
-    
-def detect_flashbang(image: Image.Image, model: FlashbangModel, device: torch.device) -> bool:
+
+def detect_flashbang(image: np.ndarray, model: FlashbangModel, device: torch.device) -> bool:
     transformed_image = test_transform(image).unsqueeze(0).to(device)
     
     with torch.no_grad():

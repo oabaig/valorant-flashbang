@@ -10,6 +10,13 @@ from PIL import Image
 from machine_learning import FlashbangModel, test_transform
 from multiprocessing import Queue
 
+def initialize_screen_capture(virtual_camera=0):
+    capture = cv2.VideoCapture(virtual_camera)
+    capture.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
+    capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
+
+    return capture
+
 def capture_screen(queue: Queue, fps=20, monitor=0):
     camera = dxcam.create(output_idx=monitor)
     camera.start(target_fps=fps)

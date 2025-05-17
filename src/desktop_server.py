@@ -1,11 +1,12 @@
 import argparse
 import socket
 import sys
+import cv2
 import torch
 import time
 from PIL import Image
 
-from flash_checker import detect_flashbang, capture_screen
+from flash_checker import detect_flashbang, initialize_screen_capture
 from machine_learning import FlashbangModel
 
 from multiprocessing import Queue, Process
@@ -41,13 +42,12 @@ def main():
 
     clients = []
 
+    capture = initialize_screen_capture()
+
     print(f"Server started at {HOST}:{PORT}")
     print("Press Ctrl+C to stop.")
 
     try:
-        frame_queue = Queue(maxsize=9)
-        p = Process(target=capture_screen, args=(frame_queue,))
-        p.start()
         while True:
             try:
                 conn, addr = server_socket.accept()
@@ -57,11 +57,14 @@ def main():
             except BlockingIOError:
                 pass
 
-            if not frame_queue.empty():
-                frame = frame_queue.get()
-                image = Image.fromarray(frame)
+            ret, frame = capture.read()
+            predicted = False
+            
+            if ret:
+                image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                 predicted = detect_flashbang(image, model, device)
-                print(f"Flashbang detected: {predicted}")
+
+            print(f"Flashbang detected: {predicted}")
 
             disconnected_clients = []
             for client in clients:

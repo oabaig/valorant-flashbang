@@ -13,9 +13,14 @@ from multiprocessing import Queue, Process
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Detect flashbangs and send the result over the network") 
+    parser = argparse.ArgumentParser(
+        description="Detect flashbangs and send the result over the network"
+    )
     parser.add_argument("--model", type=str, required=True, help="Path to the model")
     parser.add_argument("--port", type=int, required=True, help="Port to listen on")
+    parser.add_argument(
+        "--camera", type=int, required=False, default=0, help="The virtual camera used"
+    )
     args = parser.parse_args()
 
     temp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -32,7 +37,9 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model = FlashbangModel().to(device)
-    model.load_state_dict(torch.load(args.model, map_location=device, weights_only=True))
+    model.load_state_dict(
+        torch.load(args.model, map_location=device, weights_only=True)
+    )
     model.eval()
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -42,7 +49,7 @@ def main():
 
     clients = []
 
-    capture = initialize_screen_capture()
+    capture = initialize_screen_capture(args.camera)
 
     print(f"Server started at {HOST}:{PORT}")
     print("Press Ctrl+C to stop.")
@@ -59,7 +66,7 @@ def main():
 
             ret, frame = capture.read()
             predicted = False
-            
+
             if ret:
                 image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                 predicted = detect_flashbang(image, model, device)
@@ -71,7 +78,12 @@ def main():
                 try:
                     client.sendall("hello".encode())
                     client.sendall(str(predicted).encode())
-                except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError) as e:
+                except (
+                    BrokenPipeError,
+                    ConnectionResetError,
+                    ConnectionAbortedError,
+                    OSError,
+                ) as e:
                     print(f"Client disconnected or error during send: {e}")
                     disconnected_clients.append(client)
                     client.close()
@@ -89,5 +101,7 @@ def main():
         server_socket.close()
         print("Server closed.")
 
+
 if __name__ == "__main__":
     main()
+
